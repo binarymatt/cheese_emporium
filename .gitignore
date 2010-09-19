@@ -1,0 +1,4 @@
+*.pyc
+logs/
+mime.types
+run-nginx
