@@ -163,11 +163,12 @@ def list_pypi():
         rs = client.list_packages()
         cache.set('package-list',rs,timeout=5 * 60)
         return rs
-    
+
 
 def search_pypi(package_name):
     client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
     return client.package_releases(package_name)
+
 
 def package_details(package_name, version_number):
     client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
