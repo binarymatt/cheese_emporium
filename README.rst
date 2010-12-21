@@ -2,5 +2,5 @@
  Cheese Emporium
 =================
 
-A simple application for facilitating the serving of a static python
+A simple application to facilitate the serving of a static python
 package index.
