@@ -1,34 +1,40 @@
-import os
 from flask import Flask
 from flask import render_template, make_response, flash
 from flask import request, redirect
-
-from werkzeug import secure_filename
-
-from utils import regenerate_index, search_pypi, package_details
-import tempfile
 from pipext import parse_reqs
+from utils import regenerate_index, search_pypi, package_details
+from werkzeug import secure_filename
+from urllib2 import Request, urlopen, URLError, HTTPError
+import os
+import tempfile
+import pkg_resources
+
+CHEESE = pkg_resources.Requirement.parse('cheese_emporium')
+PROJECT_ROOT = pkg_resources.resource_filename(CHEESE, './') 
+FILE_ROOT = os.path.join(PROJECT_ROOT, 'files/')
 
 app = Flask(__name__)
 app.config.from_pyfile('base.cfg')
 app.config.from_object(__name__)
-app.config.from_envvar('EMPORIUM_SETTINGS')
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-FILE_ROOT = os.path.join(PROJECT_ROOT, 'files/')
+# deployment override
+# takes a file containing python (ala django settings)
+app.config.from_envvar('EMPORIUM_SETTINGS', silent=True)
 
 @app.route('/simple', methods=['POST'])
 def upload():
     f = request.files['content']
-    f.save(os.path.join(app.config['FILE_ROOT'],secure_filename(f.filename)))
+    f.save(os.path.join(app.config['FILE_ROOT'], secure_filename(f.filename)))
     regenerate_index(app.config['FILE_ROOT'],'index.html')
     response = make_response()
     response.headers['X-Swalow-Status'] = 'SUCCESS'
     return response
 
-@app.route('/')
+
+@app.route('/', methods=['GET'])
 def index():
     return render_template('instructions.html')
+    
 
 @app.route('/search', methods=['GET','POST'])
 def find_packages():
@@ -41,7 +47,7 @@ def find_packages():
         
     return render_template('find_packages.html', releases=releases, search_term=search_term)
 
-from urllib2 import Request, urlopen, URLError, HTTPError
+
 @app.route('/package/<name>/<version>')
 def package(name, version):
     details = package_details(name, version)
@@ -62,13 +68,22 @@ def package(name, version):
             print 'finished downloading'
         #handle errors
         except HTTPError, e:
-            print "HTTP Error:",e.code , url
+            print "HTTP Error:", e.code , url
         except URLError, e:
-            print "URL Error:",e.reason , url
+            print "URL Error:", e.reason , url
         regenerate_index(app.config['FILE_ROOT'],'index.html')
         flash('%s-%s was installed into the index successfully.' % (name, version))
     return redirect('/')
-    
+
+
+@app.route('/regenerate-index',methods=['POST', 'GET'])
+def regenerate():
+    if request.method == 'POST':
+        regenerate_index(app.config['FILE_ROOT'],'index.html')
+        return redirect('/index')
+    return render_template('regenerate.html')
+
+
 @app.route('/requirements',methods=['POST','GET'])
 def from_requirements():
     if request.method == "POST":
