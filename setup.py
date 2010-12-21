@@ -16,8 +16,12 @@ setup(name='cheese_emporium',
       packages=find_packages(exclude=[]),
       include_package_data=True,
       zip_safe=False,
-      install_requires=["flask", "pip"],
+      install_requires=["flask", "pip", "path.py"],
       entry_points="""
-      # -*- Entry points: -*-
+      [console_scripts]
+      cheesectl = cheese_emporium.runserver:main
+
+      [paste.app_factory]
+      main = cheese_emporium.runserver:make_app
       """,
       )
