@@ -98,7 +98,7 @@ your emporium as you would pypi::
 
 The you can upload a source ala::
 
-  $  cd /myawesome-python-pkg
+  $  cd /src/MyAwesomePyPkg
   $  python setup.py sdist upload -r local
 
 The emporium currently doesn't do anything with the credentials
@@ -106,4 +106,4 @@ The emporium currently doesn't do anything with the credentials
 
 Now your package is available for install from your emporium::
 
-  $ pip install -i http://mycheese/index/ Pylons
+  $ pip install -i http://mycheese/index/ MyAwesomePyPkg
