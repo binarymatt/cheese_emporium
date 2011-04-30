@@ -1,0 +1,10 @@
+<html>
+    <body>
+        <h1>Package Index</h1>
+        <ul>
+            {% for key, value in items %}
+            <li><a href='{{key}}/index.html'>{{key}}</a></li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

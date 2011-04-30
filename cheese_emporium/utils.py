@@ -1,5 +1,6 @@
 from path import path
 from werkzeug.contrib.cache import SimpleCache
+from flask import render_template
 import os
 import shutil
 import subprocess
@@ -116,7 +117,9 @@ def regenerate_index(indexpath, filename):
         indexpath.makedirs()
     projects = {}
     files = indexpath.files()
+    print [f for f in files]
     for item in files:
+        print item
         try:
             tempdir = tempfile.mkdtemp()
             project, revision = _extract_name_version(os.path.join(path,item), tempdir)
@@ -130,31 +133,16 @@ def regenerate_index(indexpath, filename):
     items.sort()
 
     f = indexpath / filename
-    f.write_lines(['<html>\n',
-                    '<body>\n',
-                    '<h1>Package Index</h1>\n',
-                    '<ul>\n'])
     for key, value in items:
         dirname = indexpath / key
         if not dirname.exists():
             dirname.makedirs()
-        f.write_text('<li><a href="%s/index.html">%s</a>\n' % (key, key), append=True)
         sub = indexpath / key / 'index.html' 
-        sub.write_lines(['<html>\n',
-                        '<body>\n',
-                        '<h1>%s Distributions</h1>\n' % key,
-                        '<ul>\n'])
-        for revision, archive in value:
-            print '  -> %s, %s' % (revision, archive)
-            sub.write_text('<li><a href="../%s">%s</a>\n' % (archive.name, archive.name), append=True)
-        
-        sub.write_lines(['</ul>',
-                        '</body>',
-                        '</html>'], append=True)
-    f.write_lines(['</ul>',
-                    '</body>',
-                    '</html>'], append=True)
+        package_html = render_template('package_template.html', value=value, key=key)
+        sub.write_text(package_html)
 
+    index_html = render_template('index_template.html',items=items)
+    f.write_text(index_html)
 
 cache = SimpleCache()
 

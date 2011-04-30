@@ -80,7 +80,8 @@ def package(name, version):
 def regenerate():
     if request.method == 'POST':
         regenerate_index(app.config['FILE_ROOT'],'index.html')
-        return redirect('/index')
+        flash('Index has been regenerated.')
+        return redirect('/')
     return render_template('regenerate.html')
 
 
