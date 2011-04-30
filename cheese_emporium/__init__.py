@@ -2,7 +2,7 @@ from flask import Flask
 from flask import render_template, make_response, flash
 from flask import request, redirect
 from pipext import parse_reqs
-from utils import regenerate_index, search_pypi, package_details
+from utils import regenerate_index, search_pypi, package_details, regenerate_package
 from werkzeug import secure_filename
 from urllib2 import Request, urlopen, URLError, HTTPError
 import os
@@ -24,8 +24,12 @@ app.config.from_envvar('EMPORIUM_SETTINGS', silent=True)
 @app.route('/simple', methods=['POST'])
 def upload():
     f = request.files['content']
-    f.save(os.path.join(app.config['FILE_ROOT'], secure_filename(f.filename)))
-    regenerate_index(app.config['FILE_ROOT'],'index.html')
+    filename = secure_filename(f.filename)
+    filepath = os.path.join(app.config['FILE_ROOT'], filename)
+    f.save(filepath)
+    #regenerate_index(app.config['FILE_ROOT'],'index.html')
+    regenerate_package(app.config['FILE_ROOT'],filepath)
+
     response = make_response()
     response.headers['X-Swalow-Status'] = 'SUCCESS'
     return response

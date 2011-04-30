@@ -109,16 +109,27 @@ def _extract_name_version(filename, tempdir):
         print traceback.format_exc()
     return
 
-        
-def regenerate_index(indexpath, filename):
-    print "Regenerate index"
+def regenerate_package(indexpath, package_filename):
+    #get project name
+    tempdir = tempfile.mkdtemp()
     indexpath = path(indexpath)
-    if not indexpath.exists():
-        indexpath.makedirs()
+    project, revision = _extract_name_version(package_filename, tempdir)
+    dirname = indexpath / project
+    if not dirname.exists():
+        regenerate_index(indexpath)
+        return
+    shutil.rmtree(tempdir)
+    indexpath = path(indexpath)
+    files = indexpath.files(project+'*')
+    items = parse_files(files)
+    for key, value in items:
+        sub = indexpath / key / 'index.html' 
+        package_html = render_template('package_template.html', value=value, key=key)
+        sub.write_text(package_html)
+
+def parse_files(file_list):
     projects = {}
-    files = indexpath.files()
-    print [f for f in files]
-    for item in files:
+    for item in file_list:
         print item
         try:
             tempdir = tempfile.mkdtemp()
@@ -128,10 +139,19 @@ def regenerate_index(indexpath, filename):
         except:
             import traceback
             print traceback.format_exc()
-    
+
     items = projects.items()
     items.sort()
+    return items
 
+def regenerate_index(indexpath, filename='index.html'):
+    print "Regenerate index"
+    indexpath = path(indexpath)
+    if not indexpath.exists():
+        indexpath.makedirs()
+    files = indexpath.files()
+    items = parse_files(files)
+    
     f = indexpath / filename
     for key, value in items:
         dirname = indexpath / key
