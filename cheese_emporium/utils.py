@@ -1,10 +1,13 @@
-import os, tempfile
+from path import path
+from werkzeug.contrib.cache import SimpleCache
+import os
 import shutil
 import subprocess
-import tarfile
-import zipfile
 import sys
+import tarfile
+import tempfile
 import xmlrpclib
+import zipfile
 
 
 class TarArchive:
@@ -104,12 +107,15 @@ def _extract_name_version(filename, tempdir):
         import traceback
         print traceback.format_exc()
     return
+
         
-def regenerate_index(path, filename):
-    if not os.path.exists(path):
-        os.makedirs(path)
+def regenerate_index(indexpath, filename):
+    print "Regenerate index"
+    indexpath = path(indexpath)
+    if not indexpath.exists():
+        indexpath.makedirs()
     projects = {}
-    files = os.listdir(path)
+    files = indexpath.files()
     for item in files:
         try:
             tempdir = tempfile.mkdtemp()
@@ -117,42 +123,42 @@ def regenerate_index(path, filename):
             projects.setdefault(project, []).append((revision, item))
             shutil.rmtree(tempdir)
         except:
-            pass
+            import traceback
+            print traceback.format_exc()
     
     items = projects.items()
     items.sort()
-    
-    f = open(os.path.join(path, filename), 'w')
-    f.writelines(['<html>\n',
+
+    f = indexpath / filename
+    f.write_lines(['<html>\n',
                     '<body>\n',
                     '<h1>Package Index</h1>\n',
                     '<ul>\n'])
     for key, value in items:
-        dirname = os.path.join(path, key)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        f.write('<li><a href="%s/index.html">%s</a>\n' % (key, key))
-        sub = open('%s/%s/index.html' % (path, key), 'w')
-        sub.writelines(['<html>\n',
+        dirname = indexpath / key
+        if not dirname.exists():
+            dirname.makedirs()
+        f.write_text('<li><a href="%s/index.html">%s</a>\n' % (key, key), append=True)
+        sub = indexpath / key / 'index.html' 
+        sub.write_lines(['<html>\n',
                         '<body>\n',
                         '<h1>%s Distributions</h1>\n' % key,
                         '<ul>\n'])
         for revision, archive in value:
             print '  -> %s, %s' % (revision, archive)
-            sub.write('<li><a href="../%s">%s</a>\n' % (archive, archive))
+            sub.write_text('<li><a href="../%s">%s</a>\n' % (archive.name, archive.name), append=True)
         
-        sub.writelines(['</ul>\n',
-                        '</body>\n',
-                        '</html>\n'])
-    f.writelines(['</ul>\n',
-                    '</body>\n',
-                    '</html>\n'])
-    f.close()
+        sub.write_lines(['</ul>',
+                        '</body>',
+                        '</html>'], append=True)
+    f.write_lines(['</ul>',
+                    '</body>',
+                    '</html>'], append=True)
 
-from werkzeug.contrib.cache import SimpleCache
+
 cache = SimpleCache()
+
 def list_pypi():
-    
     rs = cache.get('package-list')
     if rs:
         print 'found cached list'
